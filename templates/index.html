@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ATM Login</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h2>ATM Login</h2>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+    <form action="{{ url_for('login') }}" method="POST">
+        <label>Card Number:</label>
+        <input type="text" name="card_number" placeholder="Enter your card number" required>
+        <label>PIN:</label>
+        <input type="password" name="pin" placeholder="Enter your PIN" required>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>
