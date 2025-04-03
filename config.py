@@ -1,0 +1,5 @@
+SECRET_KEY = "atm_interface"
+MYSQL_HOST = "localhost"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = "shreyapk"
+MYSQL_DB = "ATM_db"
