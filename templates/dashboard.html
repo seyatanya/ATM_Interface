@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+    <title>Transaction Selection</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h2>Welcome to the ATM Dashboard!</h2>
-    <p>Your balance: $1,000.00</p>
-    <button>Withdraw</button>
-    <button>Deposit</button>
-    <button>Logout</button>
+    <h2>Select a Transaction</h2>
+    <form action="{{ url_for('dashboard') }}" method="POST">
+        <button type="submit" name="transaction" value="balance">Balance Inquiry</button>
+        <button type="submit" name="transaction" value="withdraw">Cash Withdrawal</button>
+        <button type="submit" name="transaction" value="deposit">Cash Deposit</button>
+        <button type="submit" name="transaction" value="statement">Mini Statement</button>
+        <button type="submit" name="transaction" value="change_pin">Change PIN</button>
+        <button type="submit" name="transaction" value="exit">Exit</button>
+    </form>
 </body>
 </html>
