@@ -24,11 +24,11 @@ def login():
     card_number = request.form.get('card_number')
     pin = request.form.get('pin')
 
-    # Track attempts in session
+    # Track login attempts in session
     if 'login_attempts' not in session:
         session['login_attempts'] = 0
 
-    # Connect to DB
+    # Connect to database
     conn = mysql.connector.connect(
         host='localhost',
         user='root',
@@ -37,34 +37,53 @@ def login():
     )
     cur = conn.cursor()
 
-    # Check if the account is blocked
-    cur.execute("SELECT blocked FROM users WHERE card_number = %s", (card_number,))
+    # Check if the user is blocked and get the blocked time
+    cur.execute("SELECT blocked, blocked_time FROM users WHERE card_number = %s", (card_number,))
     user_status = cur.fetchone()
-    if user_status and user_status[0]:  # blocked == 1
-        flash("Your account is blocked due to multiple failed login attempts.", "danger")
-        return redirect('/')
 
-    # Authenticate
-    cur.execute("SELECT * FROM users WHERE card_number=%s AND pin_hash=%s", (card_number, pin))
+    if user_status:
+        blocked, blocked_time = user_status
+
+        if blocked:
+            # Get current time from DB
+            cur.execute("SELECT NOW()")
+            now = cur.fetchone()[0]
+
+            # If 6 hours have passed, unblock the account
+            if blocked_time and (now - blocked_time).total_seconds() >= 6 * 3600:
+                cur.execute("UPDATE users SET blocked = 0, blocked_time = NULL WHERE card_number = %s", (card_number,))
+                conn.commit()
+                flash("Account auto-unblocked. Please try logging in again.", "info")
+            else:
+                flash("Your account is blocked due to multiple failed login attempts. Try again later.", "danger")
+                conn.close()
+                return redirect('/')
+
+    # Authenticate the user
+    cur.execute("SELECT * FROM users WHERE card_number = %s AND pin_hash = %s", (card_number, pin))
     user = cur.fetchone()
 
     if user:
+        # Login success
         session['card_number'] = card_number
-        session['login_attempts'] = 0  # Reset attempts on success
+        session['login_attempts'] = 0
         flash('Login successful!', 'success')
+        conn.close()
         return redirect('/dashboard')
     else:
+        # Login failed
         session['login_attempts'] += 1
         attempts_left = 3 - session['login_attempts']
 
         if attempts_left <= 0:
-            # Block the account
-            cur.execute("UPDATE users SET blocked = 1 WHERE card_number = %s", (card_number,))
+            # Block account and set blocked time
+            cur.execute("UPDATE users SET blocked = 1, blocked_time = NOW() WHERE card_number = %s", (card_number,))
             conn.commit()
             flash("Account blocked after 3 failed attempts.", "danger")
         else:
             flash(f"Invalid card number or PIN!", "danger")
 
+        conn.close()
         return redirect('/')
 
 
@@ -311,12 +330,14 @@ def mini_statement():
 
         # Retrieve the last 10 transactions for the logged-in user
         query = """
-            SELECT transaction_date, transaction_type, amount, balance 
-            FROM transactions
-            WHERE card_number = %s
-            ORDER BY transaction_date DESC
-            LIMIT 10
-        """
+    SELECT t.transaction_date, t.transaction_type, t.amount, t.balance, u.account_type
+    FROM transactions t
+    JOIN users u ON t.card_number = u.card_number
+    WHERE t.card_number = %s
+    ORDER BY t.transaction_date DESC
+    LIMIT 10
+"""
+
         cur.execute(query, (card_number,))
         transactions = cur.fetchall()
 

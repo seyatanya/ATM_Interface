@@ -41,15 +41,18 @@
                 <th>Transaction Type</th>
                 <th>Amount</th>
                 <th>Balance</th>
+                <th>Account Type</th>  <!-- New column -->
             </tr>
-            {% for date, type, amount, balance in transactions %}
+            {% for date, type, amount, balance, account_type in transactions %}
             <tr>
                 <td>{{ date }}</td>
                 <td>{{ type }}</td>
                 <td>{{ amount }}</td>
                 <td>{{ balance }}</td>
+                <td>{{ account_type }}</td>  <!-- New value -->
             </tr>
             {% endfor %}
+            
         </table>
     {% else %}
         <p style="text-align: center;">No recent transactions found.</p>
