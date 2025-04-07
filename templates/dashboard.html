@@ -62,14 +62,14 @@
         </a>
     </div>
     <div class="button-container">
-        <form action="{{ url_for('change_pin') }}" method="POST">
-            <button type="submit" name="transaction" value="change_pin">Change PIN</button>
-        </form>
+        <a href="{{ url_for('change_pin') }}">
+            <button type="button">Change PIN</button>
+        </a>
     </div>
-    <div class="button-container">
-        <form action="{{ url_for('exit') }}" method="POST">
-            <button type="submit">Exit</button>
-        </form>
+    <div>
+        <a href="{{ url_for('exit') }}">
+            <button type="button">Exit</button>
+        </a>
     </div>
 </body>
 </html>

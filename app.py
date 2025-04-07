@@ -22,20 +22,51 @@ def home():
 @app.route('/login', methods=['POST'])
 def login():
     card_number = request.form.get('card_number')
-    session['card_number'] = card_number
-    pin_hash = request.form.get('pin')
+    pin = request.form.get('pin')
 
-    # Database query
-    query = "SELECT * FROM users WHERE card_number=%s AND pin=%s"
-    cur.execute("SELECT * FROM users WHERE card_number=%s AND pin_hash=%s", (card_number, pin_hash))
+    # Track attempts in session
+    if 'login_attempts' not in session:
+        session['login_attempts'] = 0
+
+    # Connect to DB
+    conn = mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='shreyapk',
+        database='atm_db'
+    )
+    cur = conn.cursor()
+
+    # Check if the account is blocked
+    cur.execute("SELECT blocked FROM users WHERE card_number = %s", (card_number,))
+    user_status = cur.fetchone()
+    if user_status and user_status[0]:  # blocked == 1
+        flash("Your account is blocked due to multiple failed login attempts.", "danger")
+        return redirect('/')
+
+    # Authenticate
+    cur.execute("SELECT * FROM users WHERE card_number=%s AND pin_hash=%s", (card_number, pin))
     user = cur.fetchone()
 
     if user:
+        session['card_number'] = card_number
+        session['login_attempts'] = 0  # Reset attempts on success
         flash('Login successful!', 'success')
         return redirect('/dashboard')
     else:
-        flash('Invalid card number or PIN!', 'danger')
+        session['login_attempts'] += 1
+        attempts_left = 3 - session['login_attempts']
+
+        if attempts_left <= 0:
+            # Block the account
+            cur.execute("UPDATE users SET blocked = 1 WHERE card_number = %s", (card_number,))
+            conn.commit()
+            flash("Account blocked after 3 failed attempts.", "danger")
+        else:
+            flash(f"Invalid card number or PIN!", "danger")
+
         return redirect('/')
+
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
@@ -53,7 +84,7 @@ def dashboard():
         elif transaction == 'change_pin':
             return render_template('change_pin.html')
         elif transaction == 'exit':
-            return render_template('index.html')
+            return redirect('/exit')
 
     return render_template('dashboard.html')
 
@@ -355,10 +386,8 @@ def change_pin():
 @app.route('/exit', methods=['GET', 'POST'])
 def exit():
     session.clear()
-    flash("You have successfully exited.", "success")
-    return render_template('index.html')
-
-
+    flash("You have been logged out. Thank you for using the ATM!", "info")
+    return redirect('/')
 
 if __name__ == "__main__":
     app.run(debug=True)
