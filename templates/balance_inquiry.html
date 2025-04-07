@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Balance Inquiry</title>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h2>Your Current Balance</h2>
+    <p>Balance: ₹{{ balance }}</p>
+    <a href="{{ url_for('dashboard') }}">Back to Transactions</a>
+</body>
+</html>

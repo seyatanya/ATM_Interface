@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cash Withdraw</title>
+</head>
+<body>
+    <h2>Select Account Type</h2>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('withdraw') }}" method="POST">
+        <label for="account_type">Account Type:</label>
+        <select name="account_type" required>
+            <option value="">Select Account</option>
+            <option value="savings">Savings</option>
+            <option value="current">Current</option>
+            <option value="credit">Credit</option>
+        </select>
+        <button type="submit">Continue</button>
+    </form>
+</body>
+</html>

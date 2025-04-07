@@ -2,17 +2,74 @@
 <html>
 <head>
     <title>Transaction Selection</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            text-align: center;
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        a {
+            text-decoration: none;
+        }
+        .button-container {
+            display: inline-block;
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Flash messages block -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-message">
+            {% for message in messages %}
+            <div>{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
     <h2>Select a Transaction</h2>
-    <form action="{{ url_for('dashboard') }}" method="POST">
-        <button type="submit" name="transaction" value="balance">Balance Inquiry</button>
-        <button type="submit" name="transaction" value="withdraw">Cash Withdrawal</button>
-        <button type="submit" name="transaction" value="deposit">Cash Deposit</button>
-        <button type="submit" name="transaction" value="statement">Mini Statement</button>
-        <button type="submit" name="transaction" value="change_pin">Change PIN</button>
-        <button type="submit" name="transaction" value="exit">Exit</button>
-    </form>
+    <div class="button-container">
+        <a href="{{ url_for('balance_inquiry') }}">
+            <button type="button">Balance Inquiry</button>
+        </a>
+    </div>
+    <div class="button-container">
+        <a href="{{ url_for('withdraw') }}">
+            <button type="button">Withdraw</button>
+        </a>
+    </div>
+    <div class="button-container">
+        <a href="{{ url_for('mini_statement') }}">
+            <button type="button">Mini Statement</button>
+        </a>
+    </div>
+    <div class="button-container">
+        <form action="{{ url_for('change_pin') }}" method="POST">
+            <button type="submit" name="transaction" value="change_pin">Change PIN</button>
+        </form>
+    </div>
+    <div class="button-container">
+        <form action="{{ url_for('exit') }}" method="POST">
+            <button type="submit">Exit</button>
+        </form>
+    </div>
 </body>
 </html>

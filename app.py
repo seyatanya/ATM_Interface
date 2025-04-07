@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, flash, session
 import mysql.connector
+from decimal import Decimal
 
-app = Flask(__name__)
+
+app = Flask(__name__, static_folder='static')
 app.secret_key = 'atm_interface'  # For flash messages
 
 # Database connection
@@ -20,6 +22,7 @@ def home():
 @app.route('/login', methods=['POST'])
 def login():
     card_number = request.form.get('card_number')
+    session['card_number'] = card_number
     pin_hash = request.form.get('pin')
 
     # Database query
@@ -40,50 +43,321 @@ def dashboard():
         transaction = request.form.get('dashboard')
 
         if transaction == 'balance':
-            return redirect(url_for('balance_inquiry'))
+            return render_template('balance_inquiry.html')
         elif transaction == 'withdraw':
-            return redirect(url_for('withdraw'))
+            return render_template('withdraw.html')
         elif transaction == 'deposit':
-            return redirect(url_for('deposit'))
+            return redirect('/deposit')
         elif transaction == 'statement':
-            return redirect(url_for('mini_statement'))
+            return redirect('/mini_statement')
         elif transaction == 'change_pin':
-            return redirect(url_for('change_pin'))
+            return render_template('change_pin.html')
         elif transaction == 'exit':
-            return redirect(url_for('logout'))
+            return render_template('index.html')
 
     return render_template('dashboard.html')
 
-@app.route('/balance_inquiry')
+@app.route('/balance_inquiry', methods=['GET'])
 def balance_inquiry():
-    # Fetch balance from the database and display
-    return "Balance Inquiry Page (Coming Soon!)"
+    card_number = session.get('card_number')
 
-@app.route('/withdraw')
+    if not card_number:
+        flash("You are not logged in!", "error")
+        return render_template('index.html')  # Use redirect instead of render_template
+
+    try:
+        conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='shreyapk',
+            database='atm_db'
+        )
+        cur = conn.cursor()
+
+        query = "SELECT balance FROM users WHERE card_number = %s"
+        cur.execute(query, (card_number,))
+        result = cur.fetchone()
+
+        if result:
+            balance = result[0]  # Since result contains a single value (balance), use index 0
+            return render_template('balance_inquiry.html', balance=balance)
+        else:
+            flash("Account not found!", "error")
+            return render_template('dashboard.html')
+
+    except Exception as e:
+        flash(f"Error fetching balance: {str(e)}", "error")
+        return render_template('dashboard.html')
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route('/withdraw', methods=['GET', 'POST'])
 def withdraw():
-    # Cash withdrawal logic
-    return "Cash Withdrawal Page (Coming Soon!)"
+    card_number = session.get('card_number')
 
-@app.route('/deposit')
-def deposit():
-    # Cash deposit logic
-    return "Cash Deposit Page (Coming Soon!)"
+    if not card_number:
+        flash("You are not logged in!", "error")
+        return render_template('index.html')
 
-@app.route('/mini_statement')
+    if request.method == 'POST':
+        account_type = request.form.get('account_type')
+
+        if not account_type:
+            flash("Please select an account type!", "error")
+            return render_template('cash_withdraw.html')
+
+        try:
+            conn = mysql.connector.connect(
+                host='localhost',
+                user='root',
+                password='shreyapk',
+                database='atm_db'
+            )
+            cur = conn.cursor()
+
+            # Get the balance of the selected account type
+            query = "SELECT balance FROM users WHERE card_number = %s AND account_type = %s"
+            cur.execute(query, (card_number, account_type))
+            result = cur.fetchone()
+
+            if result:
+                balance = float(result[0])
+                flash(f"Selected Account: {account_type.capitalize()}", "success")
+                return render_template('withdraw.html', balance=balance, account_type=account_type)
+            else:
+                flash(f"No {account_type.capitalize()} account found for this card number!", "error")
+                return render_template('cash_withdraw.html')
+
+        except Exception as e:
+            flash(f"Error retrieving account: {str(e)}", "error")
+            return render_template('dashboard.html')
+
+        finally:
+            cur.close()
+            conn.close()
+
+    # GET request: show the account selection page
+    return render_template('cash_withdraw.html')
+
+@app.route('/perform_withdraw', methods=['POST'])
+def perform_withdraw():
+    card_number = session.get('card_number')
+    account_type = request.form.get('account_type')  # Get the selected account type
+    amount = float(request.form.get('amount', 0))  # Get the withdrawal amount
+
+    if not card_number:
+        flash("You are not logged in!", "error")
+        return render_template('index.html')  # Redirect instead of render_template
+
+    if account_type not in ['savings', 'current', 'credit']:
+        flash("Invalid account type selected. Please choose a valid account type.", "error")
+        return render_template('cash_withdraw.html')  # Redirect instead of render_template
+
+    try:
+        conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='shreyapk',
+            database='atm_db'
+        )
+        cur = conn.cursor()
+
+        # Check the user's balance
+        query = "SELECT balance FROM users WHERE card_number = %s AND account_type = %s"
+        cur.execute(query, (card_number, account_type))
+        result = cur.fetchone()
+
+        if result:
+            balance = float(result[0])
+            if amount > balance:
+                flash("Insufficient balance for this withdrawal!", "error")
+                return render_template('withdraw.html')
+
+            # Perform the withdrawal
+            new_balance = balance - amount
+            update_query = "UPDATE users SET balance = %s WHERE card_number = %s AND account_type = %s"
+            cur.execute(update_query, (new_balance, card_number, account_type))
+
+            # Insert the transaction record
+            transaction_query = """
+                INSERT INTO transactions (card_number, transaction_type, amount, balance) 
+                VALUES (%s, %s, %s, %s)
+            """
+            cur.execute(transaction_query, (card_number, 'Withdraw', amount, new_balance))
+            conn.commit()
+
+            flash(f"Withdrawal of {amount} successful!", "success")
+            return render_template('index.html')  # Proper redirection
+
+        else:
+            flash(f"No {account_type.capitalize()} account found for this card number!", "error")
+            return render_template('cashwithdraw.html')
+
+    except Exception as e:
+        flash(f"Error performing withdrawal: {str(e)}", "error")
+        return render_template('dashboard.html')
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+# @app.route('/withdraw', methods=['GET', 'POST'])
+# def withdraw():
+#     card_number = session.get('card_number')
+
+#     if not card_number:
+#         flash("You are not logged in!", "error")
+#         return render_template('index.html')
+
+#     if request.method == 'POST':
+#         try:
+#             amount = Decimal(request.form['amount'])
+
+#             conn = mysql.connector.connect(
+#                 host='localhost',
+#                 user='root',
+#                 password='shreyapk',
+#                 database='atm_db'
+#             )
+#             cur = conn.cursor()
+
+#             # Fetch current balance
+#             query = "SELECT balance FROM users WHERE card_number = %s"
+#             cur.execute(query, (card_number,))
+#             result = cur.fetchone()
+
+#             if result:
+#                 balance = result[0]
+
+#                 # Check if the amount is within the balance
+#                 if amount > balance:
+#                     flash(f"Insufficient balance! Your current balance is less", "error")
+#                     return render_template('withdraw.html')
+
+#                 # Update the balance
+#                 new_balance = balance - amount
+#                 update_query = "UPDATE users SET balance = %s WHERE card_number = %s"
+#                 cur.execute(update_query, (new_balance, card_number))
+#                 conn.commit()
+
+#                 flash(f"Withdrawal successful! ₹{amount} has been debited. Your new balance is ₹{new_balance}.", "success")
+#                 return render_template('withdraw.html')
+
+#             flash("Account not found!", "error")
+#             return render_template('withdraw.html')
+
+#         except Exception as e:
+#             flash(f"Error during withdrawal: {str(e)}", "error")
+#             return render_template('withdraw.html')
+
+#         finally:
+#             cur.close()
+#             conn.close()
+
+#     return render_template('withdraw.html')
+
+@app.route('/mini_statement', methods=['GET'])
 def mini_statement():
-    # Display the recent transactions
-    return "Mini Statement Page (Coming Soon!)"
+    card_number = session.get('card_number')
 
-@app.route('/change_pin')
+    if not card_number:
+        flash("You are not logged in!", "error")
+        return render_template('index.html')
+
+    try:
+        conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='shreyapk',
+            database='atm_db'
+        )
+        cur = conn.cursor()
+
+        # Retrieve the last 10 transactions for the logged-in user
+        query = """
+            SELECT transaction_date, transaction_type, amount, balance 
+            FROM transactions
+            WHERE card_number = %s
+            ORDER BY transaction_date DESC
+            LIMIT 10
+        """
+        cur.execute(query, (card_number,))
+        transactions = cur.fetchall()
+
+        return render_template('mini_statement.html', transactions=transactions)
+
+    except Exception as e:
+        flash(f"Error retrieving mini statement: {str(e)}", "error")
+        return render_template('dashboard.html')
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route('/change_pin', methods=['GET', 'POST'])
 def change_pin():
-    # Change PIN logic
-    return "Change PIN Page (Coming Soon!)"
+    card_number = session.get('card_number')
 
+    if request.method == 'POST':
+        old_pin = request.form.get('old_pin')
+        new_pin = request.form.get('new_pin')
+        confirm_pin = request.form.get('confirm_pin')
 
+        if not card_number:
+            flash("You are not logged in!", "error")
+            return render_template('index.html')
 
-@app.route('/logout')
-def logout():
-    return redirect('index.html')
+        if new_pin != confirm_pin:
+            flash("New PIN and confirmation do not match!", "error")
+            return render_template('change_pin.html')
+
+        try:
+            conn = mysql.connector.connect(
+                host='localhost',
+                user='root',
+                password='shreyapk',
+                database='atm_db'
+            )
+            cur = conn.cursor()
+
+            # Check if the old PIN is correct
+            query = "SELECT pin_hash FROM users WHERE card_number = %s"
+            cur.execute(query, (card_number,))
+            result = cur.fetchone()
+
+            if result and result[0] == old_pin:
+                # Update with the new PIN
+                update_query = "UPDATE users SET pin_hash = %s WHERE card_number = %s"
+                cur.execute(update_query, (new_pin, card_number))
+                conn.commit()
+                flash("PIN changed successfully!", "success")
+                return render_template('index.html')
+            else:
+                flash("Incorrect old PIN!", "error")
+                return render_template('change_pin.html')
+
+        except Exception as e:
+            flash(f"Error changing PIN: {str(e)}", "error")
+            return render_template('index.html')
+
+        finally:
+            cur.close()
+            conn.close()
+
+    return render_template('change_pin.html')
+
+@app.route('/exit', methods=['GET', 'POST'])
+def exit():
+    session.clear()
+    flash("You have successfully exited.", "success")
+    return render_template('index.html')
+
 
 
 if __name__ == "__main__":

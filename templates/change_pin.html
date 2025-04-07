@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Change PIN</title>
+    <style>
+        body {
+            text-align: center;
+            margin-top: 50px;
+        }
+        input {
+            margin: 5px;
+            padding: 8px;
+            width: 200px;
+        }
+        button {
+            padding: 8px 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Change PIN</h2>
+    <form action="{{ url_for('change_pin') }}" method="POST">
+        <label>Old PIN:</label>
+        <input type="password" name="old_pin" required><br>
+    
+        <label>New PIN:</label>
+        <input type="password" name="new_pin" required><br>
+    
+        <label>Confirm New PIN:</label>
+        <input type="password" name="confirm_pin" required><br>
+    
+        <button type="submit">Change PIN</button>
+    </form>
+    
+    
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+</body>
+</html>
