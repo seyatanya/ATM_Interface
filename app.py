@@ -19,7 +19,7 @@ cur = conn.cursor()
 def home():
     return render_template('index.html')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     card_number = request.form.get('card_number')
     pin = request.form.get('pin')
@@ -53,7 +53,6 @@ def login():
             if blocked_time and (now - blocked_time).total_seconds() >= 6 * 3600:
                 cur.execute("UPDATE users SET blocked = 0, blocked_time = NULL WHERE card_number = %s", (card_number,))
                 conn.commit()
-                flash("Account auto-unblocked. Please try logging in again.", "info")
             else:
                 flash("Your account is blocked due to multiple failed login attempts. Try again later.", "danger")
                 conn.close()
@@ -69,7 +68,7 @@ def login():
         session['login_attempts'] = 0
         flash('Login successful!', 'success')
         conn.close()
-        return redirect('/dashboard')
+        return redirect('/menu')
     else:
         # Login failed
         session['login_attempts'] += 1
@@ -87,10 +86,10 @@ def login():
         return redirect('/')
 
 
-@app.route('/dashboard', methods=['GET', 'POST'])
-def dashboard():
+@app.route('/menu', methods=['GET', 'POST'])
+def menu():
     if request.method == 'POST':
-        transaction = request.form.get('dashboard')
+        transaction = request.form.get('menu')
 
         if transaction == 'balance':
             return render_template('balance_inquiry.html')
@@ -105,7 +104,7 @@ def dashboard():
         elif transaction == 'exit':
             return redirect('/exit')
 
-    return render_template('dashboard.html')
+    return render_template('menu.html')
 
 @app.route('/balance_inquiry', methods=['GET'])
 def balance_inquiry():
@@ -133,11 +132,11 @@ def balance_inquiry():
             return render_template('balance_inquiry.html', balance=balance)
         else:
             flash("Account not found!", "error")
-            return render_template('dashboard.html')
+            return render_template('menu.html')
 
     except Exception as e:
         flash(f"Error fetching balance: {str(e)}", "error")
-        return render_template('dashboard.html')
+        return render_template('menu.html')
 
     finally:
         cur.close()
@@ -183,7 +182,7 @@ def withdraw():
 
         except Exception as e:
             flash(f"Error retrieving account: {str(e)}", "error")
-            return render_template('dashboard.html')
+            return render_template('menu.html')
 
         finally:
             cur.close()
@@ -248,68 +247,12 @@ def perform_withdraw():
 
     except Exception as e:
         flash(f"Error performing withdrawal: {str(e)}", "error")
-        return render_template('dashboard.html')
+        return render_template('menu'
+        '.html')
 
     finally:
         cur.close()
         conn.close()
-
-
-
-# @app.route('/withdraw', methods=['GET', 'POST'])
-# def withdraw():
-#     card_number = session.get('card_number')
-
-#     if not card_number:
-#         flash("You are not logged in!", "error")
-#         return render_template('index.html')
-
-#     if request.method == 'POST':
-#         try:
-#             amount = Decimal(request.form['amount'])
-
-#             conn = mysql.connector.connect(
-#                 host='localhost',
-#                 user='root',
-#                 password='shreyapk',
-#                 database='atm_db'
-#             )
-#             cur = conn.cursor()
-
-#             # Fetch current balance
-#             query = "SELECT balance FROM users WHERE card_number = %s"
-#             cur.execute(query, (card_number,))
-#             result = cur.fetchone()
-
-#             if result:
-#                 balance = result[0]
-
-#                 # Check if the amount is within the balance
-#                 if amount > balance:
-#                     flash(f"Insufficient balance! Your current balance is less", "error")
-#                     return render_template('withdraw.html')
-
-#                 # Update the balance
-#                 new_balance = balance - amount
-#                 update_query = "UPDATE users SET balance = %s WHERE card_number = %s"
-#                 cur.execute(update_query, (new_balance, card_number))
-#                 conn.commit()
-
-#                 flash(f"Withdrawal successful! ₹{amount} has been debited. Your new balance is ₹{new_balance}.", "success")
-#                 return render_template('withdraw.html')
-
-#             flash("Account not found!", "error")
-#             return render_template('withdraw.html')
-
-#         except Exception as e:
-#             flash(f"Error during withdrawal: {str(e)}", "error")
-#             return render_template('withdraw.html')
-
-#         finally:
-#             cur.close()
-#             conn.close()
-
-#     return render_template('withdraw.html')
 
 @app.route('/mini_statement', methods=['GET'])
 def mini_statement():
@@ -345,7 +288,7 @@ def mini_statement():
 
     except Exception as e:
         flash(f"Error retrieving mini statement: {str(e)}", "error")
-        return render_template('dashboard.html')
+        return render_template('menu.html')
 
     finally:
         cur.close()
