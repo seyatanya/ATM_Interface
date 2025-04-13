@@ -1,55 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Withdraw Money</title>
-    <style>
-        .alert {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            color: white;
-        }
-
-        .alert-success {
-            background-color: green;
-        }
-
-        .alert-error {
-            background-color: red;
-        }
-
-        .balance-info {
-            margin: 10px 0;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        form {
-            margin: 20px 0;
-        }
-
-        button, input[type="number"] {
-            padding: 8px 12px;
-            margin: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <title>Select Account Type</title>
 </head>
 <body>
-    <h2>Withdraw Money from {{ account_type.capitalize() }} Account</h2>
-
-    <!-- Display Flash Messages -->
+    <h2>Select Account Type</h2>
+    
     {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
         {% for category, message in messages %}
@@ -58,20 +14,15 @@
     {% endif %}
     {% endwith %}
 
-
-    <!-- Withdraw Form -->
-    <form action="{{ url_for('perform_withdraw') }}" method="POST">
-        <label for="amount">Enter Amount:</label>
-        <input type="number" name="amount" min="1" required>
-
-        <!-- Hidden field to pass the account type -->
-        <input type="hidden" name="account_type" value="{{ account_type }}">
-
-        <button type="submit">Withdraw</button>
+    <form action="{{ url_for('withdraw') }}" method="POST">
+        <label for="account_type">Account Type:</label>
+        <select name="account_type" required>
+            <option value="">Select Account</option>
+            <option value="savings">Savings</option>
+            <option value="current">Current</option>
+            <option value="credit">Credit</option>
+        </select>
+        <button type="submit">Continue</button>
     </form>
-
-    <!-- Back to menu -->
-    <br>
-    <a href="{{ url_for('menu') }}">Back to Menu</a>
 </body>
 </html>

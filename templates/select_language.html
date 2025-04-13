@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Language</title>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+{% if messages %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+    <h2>Please select your preferred language:</h2>
+    <form method="POST" action="/set-language">
+        <select name="language">
+            <option value="en">English</option>
+        </select>
+        <a href="{{ url_for('menu') }}">
+            <button type="button">Continue</button>
+        </a>
+    </form>
+</body>
+</html>

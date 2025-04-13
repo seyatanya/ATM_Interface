@@ -26,6 +26,7 @@
 </head>
 <body>
     <h2 style="text-align: center;">Mini Statement</h2>
+
     {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
         {% for category, message in messages %}
@@ -35,28 +36,27 @@
     {% endwith %}
 
     {% if transactions %}
-        <table>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Transaction Type</th>
+            <th>Amount</th>
+            <th>Balance</th>
+            <th>Account Type</th>
+        </tr>
+        {% for transaction in transactions %}
             <tr>
-                <th>Date</th>
-                <th>Transaction Type</th>
-                <th>Amount</th>
-                <th>Balance</th>
-                <th>Account Type</th>  <!-- New column -->
+                <td>{{ transaction.transaction_date }}</td>
+                <td>{{ transaction.transaction_type }}</td>
+                <td>{{ transaction.amount }}</td>
+                <td>{{ transaction.balance }}</td>
+                <td>{{ transaction.account_type }}</td>
             </tr>
-            {% for date, type, amount, balance, account_type in transactions %}
-            <tr>
-                <td>{{ date }}</td>
-                <td>{{ type }}</td>
-                <td>{{ amount }}</td>
-                <td>{{ balance }}</td>
-                <td>{{ account_type }}</td>  <!-- New value -->
-            </tr>
-            {% endfor %}
-            
-        </table>
-    {% else %}
-        <p style="text-align: center;">No recent transactions found.</p>
-    {% endif %}
+        {% endfor %}
+    </table>
+{% else %}
+    <p style="text-align: center;">No recent transactions found.</p>
+{% endif %}
     <br>
     <form action="{{ url_for('login') }}" method="POST" style="text-align: center;">
         <button type="submit">Back to Login</button>

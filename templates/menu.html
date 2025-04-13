@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Transaction Selection</title>
+    <title>Menu</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
@@ -45,7 +45,9 @@
         </div>
         {% endif %}
     {% endwith %}
+
     <h2>Select a Transaction</h2>
+
     <div class="button-container">
         <a href="{{ url_for('balance_inquiry') }}">
             <button type="button">Balance Inquiry</button>
