@@ -1,65 +1,301 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mini Statement</title>
+    <title>Mini Statement | ATM Interface</title>
     <style>
-        table {
-            width: 60%;
-            margin: 20px auto;
-            border-collapse: collapse;
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #1976D2;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+            --background-color: #f5f7fa;
+            --text-color: #2c3e50;
+            --border-color: #e0e0e0;
         }
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            color: var(--text-color);
             text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 10px;
         }
+
+        h2:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .statement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+
+        .account-info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
         th {
-            background-color: #f2f2f2;
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: var(--text-color);
+            position: sticky;
+            top: 0;
         }
+
+        tr:hover {
+            background-color: #f8fafc;
+            transition: background-color 0.3s ease;
+        }
+
+        .amount-cell {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .withdraw {
+            color: var(--error-color);
+        }
+
+        .deposit {
+            color: var(--success-color);
+        }
+
+        .transaction-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .transaction-withdraw {
+            background-color: #ffebee;
+            color: var(--error-color);
+        }
+
+        .transaction-deposit {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+        }
+
+        .no-transactions {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+
+        .back-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            text-align: center;
+            animation: slideIn 0.3s ease-out;
+        }
+
         .success {
-            color: green;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
+
         .error {
-            color: red;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center;">Mini Statement</h2>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="{{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    {% endwith %}
+        <h2>Mini Statement</h2>
 
-    {% if transactions %}
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Transaction Type</th>
-            <th>Amount</th>
-            <th>Balance</th>
-            <th>Account Type</th>
-        </tr>
-        {% for transaction in transactions %}
-            <tr>
-                <td>{{ transaction.transaction_date }}</td>
-                <td>{{ transaction.transaction_type }}</td>
-                <td>{{ transaction.amount }}</td>
-                <td>{{ transaction.balance }}</td>
-                <td>{{ transaction.account_type }}</td>
-            </tr>
-        {% endfor %}
-    </table>
-{% else %}
-    <p style="text-align: center;">No recent transactions found.</p>
-{% endif %}
-    <br>
-    <form action="{{ url_for('login') }}" method="POST" style="text-align: center;">
-        <button type="submit">Back to Login</button>
-    </form>
+        <div class="statement-header">
+            <div class="account-info">
+                <div>Account: {{ account_number if account_number else '' }}</div>
+            
+            </div>
+            <div class="account-info">
+                <div>Available Balance: ₹{{ balance if balance else '0.00' }}</div>
+            </div>
+        </div>
+
+        {% if transactions %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Transaction</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="transaction-badge {% if transaction.transaction_type == 'Withdraw' %}transaction-withdraw{% else %}transaction-deposit{% endif %}">
+                                        {{ transaction.transaction_type }}
+                                    </span>
+                                </td>
+                                <td class="amount-cell {% if transaction.transaction_type == 'Withdraw' %}withdraw{% else %}deposit{% endif %}">
+                                    {% if transaction.transaction_type == 'Withdraw' %}-{% endif %}₹{{ "{:,.2f}".format(transaction.amount) }}
+                                </td>
+                                <td class="amount-cell">₹{{ "{:,.2f}".format(transaction.balance) }}</td>
+                                <td>{{ transaction.account_type }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="no-transactions">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                    <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+                </svg>
+                <p>No recent transactions found.</p>
+            </div>
+        {% endif %}
+
+        <div style="text-align: center;">
+            <a href="{{ url_for('login') }}" class="back-button">Back to Login</a>
+        </div>
+    </div>
+
+    <script>
+        // Add animation to rows when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Add hover effect to table rows
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.style.transform = 'translateX(5px)';
+                row.style.transition = 'transform 0.2s ease';
+            });
+            row.addEventListener('mouseleave', () => {
+                row.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
 </body>
 </html>

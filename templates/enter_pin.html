@@ -1,23 +1,315 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Enter PIN</title>
+    <title>Enter PIN | ATM Interface</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #1976D2;
+            --success-color: #4CAF50;
+            --background-color: #f5f5f5;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        h2:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .pin-display {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .pin-digit {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .pin-digit.filled {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 2rem auto;
+            max-width: 300px;
+        }
+
+        .key {
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .key:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .key:active {
+            transform: translateY(1px);
+        }
+
+        .action-key {
+            background-color: #f5f5f5;
+            color: var(--text-color);
+        }
+
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+        }
+
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .security-notice {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .security-notice i {
+            color: var(--primary-color);
+        }
+    </style>
 </head>
 <body>
-    <h2>Enter Your PIN</h2>
-    {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    {% endwith %}
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <form action="{{ url_for('enter_pin') }}" method="POST">
-        <label for="pin">PIN:</label>
-        <input type="password" name="pin" required><br><br>
+        <h2>Enter Your PIN</h2>
         
-        <button type="submit">Submit</button>
-    </form>
+        <form action="{{ url_for('enter_pin') }}" method="POST" id="pinForm">
+            <input type="password" name="pin" id="pinInput" class="hidden-input" required maxlength="4">
+            
+            <div class="pin-display">
+                <div class="pin-digit"></div>
+                <div class="pin-digit"></div>
+                <div class="pin-digit"></div>
+                <div class="pin-digit"></div>
+            </div>
+
+            <div class="keypad">
+                <div class="key" data-value="1">1</div>
+                <div class="key" data-value="2">2</div>
+                <div class="key" data-value="3">3</div>
+                <div class="key" data-value="4">4</div>
+                <div class="key" data-value="5">5</div>
+                <div class="key" data-value="6">6</div>
+                <div class="key" data-value="7">7</div>
+                <div class="key" data-value="8">8</div>
+                <div class="key" data-value="9">9</div>
+                <div class="key action-key" id="clearKey">Clear</div>
+                <div class="key" data-value="0">0</div>
+                <div class="key action-key" id="deleteKey">←</div>
+            </div>
+
+            <button type="submit" class="submit-btn" disabled>Submit</button>
+        </form>
+
+        <div class="security-notice">
+            <i>🔒</i>
+            <span>Your PIN is securely encrypted</span>
+        </div>
+    </div>
+
+    <script>
+        const pinInput = document.getElementById('pinInput');
+        const pinDigits = document.querySelectorAll('.pin-digit');
+        const submitButton = document.querySelector('.submit-btn');
+        let currentPin = '';
+
+        // Handle numeric key clicks
+        document.querySelectorAll('.key[data-value]').forEach(key => {
+            key.addEventListener('click', () => {
+                if (currentPin.length < 4) {
+                    const value = key.dataset.value;
+                    currentPin += value;
+                    updatePinDisplay();
+                    updateInput();
+                }
+            });
+        });
+
+        // Handle clear button
+        document.getElementById('clearKey').addEventListener('click', () => {
+            currentPin = '';
+            updatePinDisplay();
+            updateInput();
+        });
+
+        // Handle delete button
+        document.getElementById('deleteKey').addEventListener('click', () => {
+            currentPin = currentPin.slice(0, -1);
+            updatePinDisplay();
+            updateInput();
+        });
+
+        // Update the PIN display dots
+        function updatePinDisplay() {
+            pinDigits.forEach((digit, index) => {
+                digit.classList.toggle('filled', index < currentPin.length);
+            });
+            submitButton.disabled = currentPin.length !== 4;
+        }
+
+        // Update the hidden input value
+        function updateInput() {
+            pinInput.value = currentPin;
+        }
+
+        // Prevent form submission if PIN is not complete
+        document.getElementById('pinForm').addEventListener('submit', (e) => {
+            if (currentPin.length !== 4) {
+                e.preventDefault();
+                alert('Please enter a 4-digit PIN');
+            }
+        });
+
+        // Add keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9' && currentPin.length < 4) {
+                currentPin += e.key;
+                updatePinDisplay();
+                updateInput();
+            } else if (e.key === 'Backspace') {
+                currentPin = currentPin.slice(0, -1);
+                updatePinDisplay();
+                updateInput();
+            } else if (e.key === 'Enter' && currentPin.length === 4) {
+                document.getElementById('pinForm').submit();
+            }
+        });
+
+        // Add animation to keys when pressed
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('mousedown', () => {
+                key.style.transform = 'scale(0.95)';
+            });
+            key.addEventListener('mouseup', () => {
+                key.style.transform = '';
+            });
+            key.addEventListener('mouseleave', () => {
+                key.style.transform = '';
+            });
+        });
+    </script>
 </body>
 </html>

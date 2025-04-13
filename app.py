@@ -314,204 +314,6 @@ def select_language():
 
     return render_template('select_language.html')
 
-# @app.route('/confirm_withdraw', methods=['GET', 'POST'])
-# def confirm_withdraw():
-#     # Get the form data
-#     amount = request.form['amount']
-#     account_type = request.form['account_type']
-
-#     # Retrieve the session data (you should already have the amount and account_type in the session or from the form)
-#     card_number = session.get('card_number')  # Assuming the card number is saved in the session
-#     pin = request.form['pin']  # Assuming PIN is submitted through the form
-
-#     if not card_number or not amount or not pin or not account_type:
-#         flash("Missing form data. Please try again.", "error")
-#         return render_template('enter_pin.html', amount=amount, account_type=account_type)
-
-#     try:
-#         # Establish database connection
-#         conn = get_db_connection()
-#         cur = conn.cursor()
-
-#         # Verify the PIN and get the account balance
-#         cur.execute("SELECT pin, balance, blocked FROM users WHERE card_number = %s AND account_type = %s", 
-#                     (card_number, account_type))
-#         result = cur.fetchone()
-
-#         if not result:
-#             flash("Account not found.", "error")
-#             return render_template('enter_pin.html', amount=amount, account_type=account_type)
-
-#         db_pin, balance, blocked = result
-
-#         if blocked:
-#             flash("Your account is blocked. Please contact the bank.", "error")
-#             return redirect(url_for('index'))  # Redirect to login if blocked
-
-#         # Check if the PIN matches
-#         if pin != db_pin:
-#             flash("Incorrect PIN.", "error")
-#             return render_template('enter_pin.html', amount=amount, account_type=account_type)
-
-#         # Check if sufficient balance is available
-#         if float(amount) > float(balance):
-#             flash("Insufficient balance.", "error")
-#             return render_template('enter_pin.html', amount=amount, account_type=account_type)
-
-#         # Proceed with the withdrawal: Deduct the amount from the account
-#         new_balance = float(balance) - float(amount)
-
-#         # Update the user's balance in the database
-#         cur.execute("UPDATE users SET balance = %s WHERE card_number = %s AND account_type = %s",
-#                     (new_balance, card_number, account_type))
-
-#         # Log the transaction in the 'transactions' table
-#         cur.execute("""
-#             INSERT INTO transactions (card_number, transaction_type, amount, balance)
-#             VALUES (%s, %s, %s, %s)
-#         """, (card_number, 'Withdraw', amount, new_balance))
-
-#         # Commit the transaction
-#         conn.commit()
-
-#         flash("Withdrawal successful!", "success")
-
-#         # Close the cursor and connection
-#         cur.close()
-#         conn.close()
-
-#         # Redirect to the login page (or any other page as per your flow)
-#         return redirect(url_for('index'))  # Redirect to login page after success
-
-#     except mysql.connector.Error as e:
-#         flash(f"Database error: {str(e)}", "error")
-#         return render_template('enter_pin.html', amount=amount, account_type=account_type)
-
-#     finally:
-#         # Ensure the cursor and connection are always closed
-#         if 'cur' in locals():
-#             cur.close()
-#         if 'conn' in locals():
-#             conn.close()
-
-# @app.route('/perform_withdraw', methods=['GET','POST'])
-# def perform_withdraw():
-#     card_number = request.form.get('card_number')
-#     amount = request.form.get('amount')
-#     pin = request.form.get('pin')
-#     account_type = request.form.get('account_type')
-
-#     if not card_number or not amount or not pin or not account_type:
-#         flash("Missing form data. Please try again.", "error")
-#         return render_template('withdraw.html')
-
-#     try:
-#         conn = get_db_connection()
-#         cur = conn.cursor()
-
-#         # Verify PIN and check block status
-#         cur.execute("SELECT pin, blocked, balance FROM users WHERE card_number = %s AND account_type = %s", 
-#                     (card_number, account_type))
-#         result = cur.fetchone()
-
-#         if not result:
-#             flash("Account not found.", "error")
-#             return render_template('withdraw.html')
-
-#         db_pin, blocked, balance = result
-
-#         if blocked:
-#             flash("Your account is blocked. Please contact the bank.", "error")
-#             return render_template('index.html')
-
-#         if pin != db_pin:
-#             flash("Incorrect PIN.", "error")
-#             return render_template('withdraw.html')
-
-#         if float(amount) > float(balance):
-#             flash("Insufficient balance.", "error")
-#             return render_template('withdraw.html')
-
-#         new_balance = float(balance) - float(amount)
-
-#         cur.execute("UPDATE users SET balance = %s WHERE card_number = %s AND account_type = %s",
-#                     (new_balance, card_number, account_type))
-
-#         cur.execute("""
-#             INSERT INTO transactions (card_number, transaction_type, amount, balance)
-#             VALUES (%s, %s, %s, %s)
-#         """, (card_number, 'Withdraw', amount, new_balance))
-
-#         conn.commit()
-
-#         flash("Withdrawal successful!", "success")
-#         return render_template('index.html')
-
-#     except mysql.connector.Error as e:
-#         flash(f"Database error: {str(e)}", "error")
-#         return render_template('withdraw.html')
-
-#     finally:
-#         cur.close()
-#         conn.close()
-
-# @app.route('/perform_withdraw', methods=['POST'])
-# def perform_withdraw():
-#     card_number = session.get('card_number')
-#     account_type = request.form.get('account_type')  # Get the selected account type
-#     amount = float(request.form.get('amount', 0))  # Get the withdrawal amount
-
-#     if not card_number:
-#         flash("You are not logged in!", "error")
-#         return render_template('index.html')  # Redirect instead of render_template
-
-#     if account_type not in ['savings', 'current', 'credit']:
-#         flash("Invalid account type selected. "
-#         "Please choose a valid account type.", "error")
-#         return render_template('cash_withdraw.html')  # Redirect instead of render_template
-
-#     try:
-#         conn = get_db_connection()
-#         cur = conn.cursor()
-        
-#         # Check the user's balance
-#         query = "SELECT balance FROM users WHERE card_number = %s AND account_type = %s"
-#         cur.execute(query, (card_number, account_type))
-#         result = cur.fetchone()
-
-#         if result:
-#             balance = float(result[0])
-#             if amount > balance:
-#                 flash("Insufficient balance for this withdrawal!", "error")
-#                 return render_template('withdraw.html')
-
-#             # Perform the withdrawal
-#             new_balance = balance - amount
-#             update_query = "UPDATE users SET balance = %s WHERE card_number = %s AND account_type = %s"
-#             cur.execute(update_query, (new_balance, card_number, account_type))
-            
-#             # Insert the transaction record
-#             transaction_query = """
-#                 INSERT INTO transactions (card_number, transaction_type, amount, balance) 
-#                 VALUES (%s, %s, %s, %s)
-#             """
-#             cur.execute(transaction_query, (card_number, 'Withdraw', amount, new_balance))
-#             conn.commit()
-
-#             flash(f"Withdrawal of {amount} successful!", "success")
-#             return render_template('index.html')  # Proper redirection
-
-        
-#         flash(f"No {account_type.capitalize()} account found for this card number!", "error")
-#         return render_template('cash_withdraw.html')
-#     except mysql.connector.Error as e:
-#         flash(f"Error performing withdrawal: {str(e)}", "error")
-#         return render_template('menu.html')
-
-#     finally:
-#         cur.close()
-#         conn.close()
-
 @app.route('/mini_statement', methods=['GET'])
 def mini_statement():
     card_number = session.get('card_number')
@@ -523,6 +325,7 @@ def mini_statement():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Fetch the 10 most recent transactions
     query = """
         SELECT t.transaction_date, t.transaction_type, t.amount, t.balance, u.account_type
         FROM transactions t
@@ -533,17 +336,26 @@ def mini_statement():
     """
     cursor.execute(query, (card_number,))
     rows = cursor.fetchall()
-
-    # Use cursor.description to pair column names with values
     columns = [column[0] for column in cursor.description]
     transactions = [dict(zip(columns, row)) for row in rows]
 
+    # Fetch the latest available balance
+    balance_query = """
+        SELECT balance FROM transactions
+        WHERE card_number = %s
+        ORDER BY transaction_date DESC
+        LIMIT 1
+    """
+    cursor.execute(balance_query, (card_number,))
+    balance_result = cursor.fetchone()
+    balance = balance_result[0] if balance_result else 0.00
+
     conn.close()
 
-    # Debugging print statement
-    print("Transactions fetched:", transactions)
-
-    return render_template('mini_statement.html', transactions=transactions)
+    return render_template('mini_statement.html',
+                            transactions=transactions,
+                            balance=balance,
+                            account_number=card_number)
 
 @app.route('/change_pin', methods=['GET', 'POST'])
 def change_pin():

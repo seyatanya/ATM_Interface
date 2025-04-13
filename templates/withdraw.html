@@ -1,28 +1,293 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Select Account Type</title>
+    <title>Select Account Type | ATM Interface</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #1976D2;
+            --success-color: #4CAF50;
+            --background-color: #f5f5f5;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h2 {
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        h2:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .account-selection-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .account-options {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .account-option {
+            display: none; /* Hide the actual radio input */
+        }
+
+        .account-option + label {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .account-option + label:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+        }
+
+        .account-option:checked + label {
+            border-color: var(--primary-color);
+            background: #e3f2fd;
+        }
+
+        .account-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: var(--primary-color);
+        }
+
+        .account-details {
+            text-align: left;
+        }
+
+        .account-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 0.2rem;
+        }
+
+        .account-description {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .continue-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .continue-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+        }
+
+        .continue-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .back-btn {
+            display: inline-block;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-top: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--secondary-color);
+        }
+
+        @keyframes checkmark {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .account-option:checked + label::after {
+            content: '✓';
+            position: absolute;
+            right: 1rem;
+            color: var(--primary-color);
+            font-weight: bold;
+            animation: checkmark 0.3s ease-out;
+        }
+    </style>
 </head>
 <body>
-    <h2>Select Account Type</h2>
-    
-    {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    {% endwith %}
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <form action="{{ url_for('withdraw') }}" method="POST">
-        <label for="account_type">Account Type:</label>
-        <select name="account_type" required>
-            <option value="">Select Account</option>
-            <option value="savings">Savings</option>
-            <option value="current">Current</option>
-            <option value="credit">Credit</option>
-        </select>
-        <button type="submit">Continue</button>
-    </form>
+        <h2>Select Account Type</h2>
+        
+        <form class="account-selection-form" action="{{ url_for('withdraw') }}" method="POST" id="withdrawForm">
+            <div class="account-options">
+                <input type="radio" id="savings" name="account_type" value="savings" class="account-option" required>
+                <label for="savings">
+                    <span class="account-icon">💰</span>
+                    <div class="account-details">
+                        <div class="account-name">Savings Account</div>
+                        <div class="account-description">Personal savings with standard withdrawal limits</div>
+                    </div>
+                </label>
+
+                <input type="radio" id="current" name="account_type" value="current" class="account-option">
+                <label for="current">
+                    <span class="account-icon">💼</span>
+                    <div class="account-details">
+                        <div class="account-name">Current Account</div>
+                        <div class="account-description">Business account with higher transaction limits</div>
+                    </div>
+                </label>
+
+                <input type="radio" id="credit" name="account_type" value="credit" class="account-option">
+                <label for="credit">
+                    <span class="account-icon">💳</span>
+                    <div class="account-details">
+                        <div class="account-name">Credit Account</div>
+                        <div class="account-description">Access your credit line with flexible withdrawals</div>
+                    </div>
+                </label>
+            </div>
+
+            <button type="submit" class="continue-btn" id="continueBtn" disabled>Continue</button>
+        </form>
+
+        <a href="{{ url_for('menu') }}" class="back-btn">← Back to Menu</a>
+    </div>
+
+    <script>
+        // Enable/disable continue button based on selection
+        document.querySelectorAll('.account-option').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('continueBtn').disabled = false;
+                
+                // Add animation to the selected option
+                document.querySelectorAll('.account-option + label').forEach(label => {
+                    label.style.transform = 'scale(1)';
+                    label.style.transition = 'transform 0.3s ease';
+                });
+                
+                this.nextElementSibling.style.transform = 'scale(1.02)';
+            });
+        });
+
+        // Form validation
+        document.getElementById('withdrawForm').addEventListener('submit', function(e) {
+            const selectedAccount = document.querySelector('input[name="account_type"]:checked');
+            
+            if (!selectedAccount) {
+                e.preventDefault();
+                alert('Please select an account type to continue');
+                return;
+            }
+        });
+
+        // Hover effect for account options
+        document.querySelectorAll('.account-option + label').forEach(label => {
+            label.addEventListener('mouseenter', function() {
+                if (!this.previousElementSibling.checked) {
+                    this.style.transform = 'translateY(-2px)';
+                }
+            });
+
+            label.addEventListener('mouseleave', function() {
+                if (!this.previousElementSibling.checked) {
+                    this.style.transform = 'translateY(0)';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
